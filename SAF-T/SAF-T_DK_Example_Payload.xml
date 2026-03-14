@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Example Danish SAF-T Financial Payload
+  Company: Demo ApS (CVR: 12345678)
+  Period: Q1 2025 (January - March)
+  Purpose: VAT (Moms) Assessment Demo for SKAT
+-->
+<AuditFile xmlns="urn:StandardAuditFile-Taxation-Financial:DK"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="urn:StandardAuditFile-Taxation-Financial:DK SAF-T_DK_Simplified.xsd">
+
+  <!-- ============================================================ -->
+  <!--  HEADER                                                       -->
+  <!-- ============================================================ -->
+  <Header>
+    <AuditFileVersion>1.0</AuditFileVersion>
+    <AuditFileCountry>DK</AuditFileCountry>
+    <AuditFileDateCreated>2025-04-01</AuditFileDateCreated>
+    <SoftwareCompanyName>Demo Accounting Systems A/S</SoftwareCompanyName>
+    <SoftwareID>DemoERP</SoftwareID>
+    <SoftwareVersion>3.2.1</SoftwareVersion>
+    <Company>
+      <!-- CVR number is the 8-digit Danish business registration number -->
+      <RegistrationNumber>12345678</RegistrationNumber>
+      <Name>Demo ApS</Name>
+      <Address>
+        <StreetName>Vesterbrogade 42</StreetName>
+        <AdditionalInfo>3. sal</AdditionalInfo>
+        <PostalCode>1620</PostalCode>
+        <City>København V</City>
+        <Country>DK</Country>
+      </Address>
+      <TaxRegistration>
+        <!-- DK VAT number = "DK" + CVR number -->
+        <TaxRegistrationNumber>12345678</TaxRegistrationNumber>
+        <TaxType>VAT</TaxType>
+        <TaxAuthority>SKAT</TaxAuthority>
+      </TaxRegistration>
+    </Company>
+    <DefaultCurrencyCode>DKK</DefaultCurrencyCode>
+    <SelectionStartDate>2025-01-01</SelectionStartDate>
+    <SelectionEndDate>2025-03-31</SelectionEndDate>
+    <HeaderComment>Q1 2025 VAT reporting period</HeaderComment>
+    <FiscalYear>2025</FiscalYear>
+    <NumberOfParts>1</NumberOfParts>
+    <PartNumber>1</PartNumber>
+  </Header>
+
+  <!-- ============================================================ -->
+  <!--  MASTER FILES                                                 -->
+  <!-- ============================================================ -->
+  <MasterFiles>
+
+    <!-- Tax Table: defines the VAT codes used in this file -->
+    <TaxTable>
+      <!-- Standard Danish VAT: 25% (Standardmoms) -->
+      <TaxTableEntry>
+        <TaxCode>MOMS25</TaxCode>
+        <Description>Dansk standardmoms 25%</Description>
+        <TaxType>VAT</TaxType>
+        <StandardTaxCode>1</StandardTaxCode>
+        <Country>DK</Country>
+        <TaxPercentage>25.00</TaxPercentage>
+      </TaxTableEntry>
+      <!-- Zero-rated VAT (e.g. export sales) -->
+      <TaxTableEntry>
+        <TaxCode>MOMS0</TaxCode>
+        <Description>Nulmoms - eksport</Description>
+        <TaxType>VAT</TaxType>
+        <StandardTaxCode>3</StandardTaxCode>
+        <Country>DK</Country>
+        <TaxPercentage>0.00</TaxPercentage>
+      </TaxTableEntry>
+      <!-- VAT exempt (e.g. financial services) -->
+      <TaxTableEntry>
+        <TaxCode>MOMSFRI</TaxCode>
+        <Description>Momsfritaget</Description>
+        <TaxType>VAT</TaxType>
+        <StandardTaxCode>4</StandardTaxCode>
+        <Country>DK</Country>
+        <TaxPercentage>0.00</TaxPercentage>
+      </TaxTableEntry>
+    </TaxTable>
+
+    <!-- Customers -->
+    <Customers>
+      <Customer>
+        <CustomerID>CUST-001</CustomerID>
+        <AccountID>10001</AccountID>
+        <CustomerTaxID>87654321</CustomerTaxID>
+        <CompanyName>Nordisk Handel A/S</CompanyName>
+        <BillingAddress>
+          <StreetName>Kongens Nytorv 5</StreetName>
+          <PostalCode>1050</PostalCode>
+          <City>København K</City>
+          <Country>DK</Country>
+        </BillingAddress>
+      </Customer>
+      <Customer>
+        <CustomerID>CUST-002</CustomerID>
+        <AccountID>10002</AccountID>
+        <CustomerTaxID>SE556677889900</CustomerTaxID>
+        <CompanyName>Swedish Imports AB</CompanyName>
+        <BillingAddress>
+          <StreetName>Storgatan 10</StreetName>
+          <PostalCode>11122</PostalCode>
+          <City>Stockholm</City>
+          <Country>SE</Country>
+        </BillingAddress>
+      </Customer>
+    </Customers>
+
+    <!-- Suppliers -->
+    <Suppliers>
+      <Supplier>
+        <SupplierID>SUPP-001</SupplierID>
+        <AccountID>20001</AccountID>
+        <SupplierTaxID>11223344</SupplierTaxID>
+        <CompanyName>Dansk Råvare ApS</CompanyName>
+        <BillingAddress>
+          <StreetName>Industrivej 8</StreetName>
+          <PostalCode>8000</PostalCode>
+          <City>Aarhus C</City>
+          <Country>DK</Country>
+        </BillingAddress>
+      </Supplier>
+    </Suppliers>
+
+  </MasterFiles>
+
+  <!-- ============================================================ -->
+  <!--  SOURCE DOCUMENTS                                             -->
+  <!-- ============================================================ -->
+  <SourceDocuments>
+
+    <!-- ---------------------------------------------------------- -->
+    <!--  SALES INVOICES (Output VAT / Salgsmoms)                  -->
+    <!-- ---------------------------------------------------------- -->
+    <SalesInvoices>
+      <NumberOfEntries>2</NumberOfEntries>
+      <TotalDebit>0.00</TotalDebit>
+      <TotalCredit>187500.00</TotalCredit>
+
+      <!-- Invoice 1: Domestic sale with 25% VAT -->
+      <Invoice>
+        <InvoiceNo>SI-2025-0001</InvoiceNo>
+        <CustomerID>CUST-001</CustomerID>
+        <Period>1</Period>
+        <PeriodYear>2025</PeriodYear>
+        <InvoiceDate>2025-01-15</InvoiceDate>
+        <InvoiceType>Sale</InvoiceType>
+        <SystemID>ERP-44201</SystemID>
+        <GLPostingDate>2025-01-15</GLPostingDate>
+        <TransactionID>TXN-2025-0101</TransactionID>
+
+        <!-- Line 1: Product sale -->
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>4000</AccountID>
+          <ProductCode>PROD-A</ProductCode>
+          <Description>Softwarelicens - årsabonnement</Description>
+          <Quantity>10</Quantity>
+          <UnitOfMeasure>STK</UnitOfMeasure>
+          <UnitPrice>8000.00</UnitPrice>
+          <TaxPointDate>2025-01-15</TaxPointDate>
+          <InvoiceLineAmount>
+            <Amount>80000.00</Amount>
+            <CurrencyCode>DKK</CurrencyCode>
+          </InvoiceLineAmount>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>MOMS25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>80000.00</TaxBase>
+            <TaxAmount>
+              <Amount>20000.00</Amount>
+              <CurrencyCode>DKK</CurrencyCode>
+            </TaxAmount>
+          </TaxInformation>
+        </Line>
+
+        <!-- Line 2: Consulting fee -->
+        <Line>
+          <LineNumber>2</LineNumber>
+          <AccountID>4100</AccountID>
+          <ProductCode>SERV-B</ProductCode>
+          <Description>Konsulentydelse - implementering</Description>
+          <Quantity>20</Quantity>
+          <UnitOfMeasure>TIM</UnitOfMeasure>
+          <UnitPrice>1500.00</UnitPrice>
+          <TaxPointDate>2025-01-15</TaxPointDate>
+          <InvoiceLineAmount>
+            <Amount>30000.00</Amount>
+            <CurrencyCode>DKK</CurrencyCode>
+          </InvoiceLineAmount>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>MOMS25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>30000.00</TaxBase>
+            <TaxAmount>
+              <Amount>7500.00</Amount>
+              <CurrencyCode>DKK</CurrencyCode>
+            </TaxAmount>
+          </TaxInformation>
+        </Line>
+
+        <DocumentTotals>
+          <TaxInformationTotals>
+            <TaxType>VAT</TaxType>
+            <TaxCode>MOMS25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>110000.00</TaxBase>
+            <TaxAmount>
+              <Amount>27500.00</Amount>
+              <CurrencyCode>DKK</CurrencyCode>
+            </TaxAmount>
+          </TaxInformationTotals>
+          <NetTotal>110000.00</NetTotal>
+          <GrossTotal>137500.00</GrossTotal>
+        </DocumentTotals>
+      </Invoice>
+
+      <!-- Invoice 2: Export sale (zero-rated) to Sweden -->
+      <Invoice>
+        <InvoiceNo>SI-2025-0002</InvoiceNo>
+        <CustomerID>CUST-002</CustomerID>
+        <Period>2</Period>
+        <PeriodYear>2025</PeriodYear>
+        <InvoiceDate>2025-02-20</InvoiceDate>
+        <InvoiceType>Sale</InvoiceType>
+        <SystemID>ERP-44285</SystemID>
+        <GLPostingDate>2025-02-20</GLPostingDate>
+        <TransactionID>TXN-2025-0205</TransactionID>
+
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>4000</AccountID>
+          <ProductCode>PROD-A</ProductCode>
+          <Description>Softwarelicens - EU eksport</Description>
+          <Quantity>5</Quantity>
+          <UnitOfMeasure>STK</UnitOfMeasure>
+          <UnitPrice>10000.00</UnitPrice>
+          <TaxPointDate>2025-02-20</TaxPointDate>
+          <InvoiceLineAmount>
+            <Amount>50000.00</Amount>
+            <CurrencyCode>DKK</CurrencyCode>
+          </InvoiceLineAmount>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>MOMS0</TaxCode>
+            <TaxPercentage>0.00</TaxPercentage>
+            <TaxBase>50000.00</TaxBase>
+            <TaxAmount>
+              <Amount>0.00</Amount>
+              <CurrencyCode>DKK</CurrencyCode>
+            </TaxAmount>
+          </TaxInformation>
+        </Line>
+
+        <DocumentTotals>
+          <TaxInformationTotals>
+            <TaxType>VAT</TaxType>
+            <TaxCode>MOMS0</TaxCode>
+            <TaxPercentage>0.00</TaxPercentage>
+            <TaxBase>50000.00</TaxBase>
+            <TaxAmount>
+              <Amount>0.00</Amount>
+              <CurrencyCode>DKK</CurrencyCode>
+            </TaxAmount>
+          </TaxInformationTotals>
+          <NetTotal>50000.00</NetTotal>
+          <GrossTotal>50000.00</GrossTotal>
+        </DocumentTotals>
+      </Invoice>
+
+    </SalesInvoices>
+
+    <!-- ---------------------------------------------------------- -->
+    <!--  PURCHASE INVOICES (Input VAT / Købsmoms)                 -->
+    <!-- ---------------------------------------------------------- -->
+    <PurchaseInvoices>
+      <NumberOfEntries>1</NumberOfEntries>
+      <TotalDebit>75000.00</TotalDebit>
+      <TotalCredit>0.00</TotalCredit>
+
+      <!-- Purchase Invoice 1: Supplier goods with 25% input VAT -->
+      <Invoice>
+        <InvoiceNo>PI-2025-0001</InvoiceNo>
+        <SupplierID>SUPP-001</SupplierID>
+        <Period>1</Period>
+        <PeriodYear>2025</PeriodYear>
+        <InvoiceDate>2025-01-10</InvoiceDate>
+        <InvoiceType>Purchase</InvoiceType>
+        <SystemID>ERP-30101</SystemID>
+        <GLPostingDate>2025-01-10</GLPostingDate>
+        <TransactionID>TXN-2025-0050</TransactionID>
+
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>5000</AccountID>
+          <ProductCode>RM-001</ProductCode>
+          <Description>Råmaterialer til produktion</Description>
+          <Quantity>100</Quantity>
+          <UnitOfMeasure>KG</UnitOfMeasure>
+          <UnitPrice>600.00</UnitPrice>
+          <TaxPointDate>2025-01-10</TaxPointDate>
+          <InvoiceLineAmount>
+            <Amount>60000.00</Amount>
+            <CurrencyCode>DKK</CurrencyCode>
+          </InvoiceLineAmount>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>MOMS25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>60000.00</TaxBase>
+            <TaxAmount>
+              <Amount>15000.00</Amount>
+              <CurrencyCode>DKK</CurrencyCode>
+            </TaxAmount>
+          </TaxInformation>
+        </Line>
+
+        <DocumentTotals>
+          <TaxInformationTotals>
+            <TaxType>VAT</TaxType>
+            <TaxCode>MOMS25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>60000.00</TaxBase>
+            <TaxAmount>
+              <Amount>15000.00</Amount>
+              <CurrencyCode>DKK</CurrencyCode>
+            </TaxAmount>
+          </TaxInformationTotals>
+          <NetTotal>60000.00</NetTotal>
+          <GrossTotal>75000.00</GrossTotal>
+        </DocumentTotals>
+      </Invoice>
+
+    </PurchaseInvoices>
+
+  </SourceDocuments>
+
+</AuditFile>
