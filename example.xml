@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+         xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+         xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+
+  <!-- BT-24 / BT-23: Peppol BIS 3.0 identifiers — always these exact values -->
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+
+  <!-- BT-1: Invoice number -->
+  <cbc:ID>INV-2025-001</cbc:ID>
+
+  <!-- BT-2: Issue date -->
+  <cbc:IssueDate>2025-03-14</cbc:IssueDate>
+
+  <!-- BT-3: Invoice type code (380 = commercial invoice) -->
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+
+  <!-- BT-5: Currency -->
+  <cbc:DocumentCurrencyCode>DKK</cbc:DocumentCurrencyCode>
+
+  <!-- BT-10: Buyer reference — mandatory in Denmark -->
+  <cbc:BuyerReference>dept-finance-01</cbc:BuyerReference>
+
+  <!-- Supplier (BT-27, BT-31) -->
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PartyName>
+        <cbc:Name>Acme ApS</cbc:Name>
+      </cac:PartyName>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>DK12345678</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+
+  <!-- Buyer (BT-44, BT-47) -->
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PartyName>
+        <cbc:Name>Danish Tax Agency</cbc:Name>
+      </cac:PartyName>
+      <cac:PartyTaxScheme>
+        <cbc:CompanyID>DK98765432</cbc:CompanyID>
+        <cac:TaxScheme>
+          <cbc:ID>VAT</cbc:ID>
+        </cac:TaxScheme>
+      </cac:PartyTaxScheme>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+
+  <!-- Tax total (BT-110) -->
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="DKK">250.00</cbc:TaxAmount>
+  </cac:TaxTotal>
+
+  <!-- Monetary totals (BT-106, BT-112, BT-115) -->
+  <cac:LegalMonetaryTotal>
+    <cbc:TaxExclusiveAmount currencyID="DKK">1000.00</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="DKK">1250.00</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="DKK">1250.00</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+
+  <!-- Minimum one invoice line required by the spec -->
+  <cac:InvoiceLine>
+    <cbc:ID>1</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="HUR">10</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="DKK">1000.00</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>Consulting Services</cbc:Name>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="DKK">100.00</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>
+
+</Invoice>
