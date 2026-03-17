@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+  <soapenv:Body>
+    <urn:checkVatResponse xmlns:urn="urn:ec.europa.eu:taxud:vies:services:checkVat:types">
+      <urn:countryCode>DE</urn:countryCode>
+      <urn:vatNumber>123456789</urn:vatNumber>
+      <urn:requestDate>2025-03-14+01:00</urn:requestDate>
+      <urn:valid>true</urn:valid>
+      <urn:name>Acme GmbH</urn:name>
+      <urn:address>Hauptstrasse 10, 10115 Berlin</urn:address>
+    </urn:checkVatResponse>
+  </soapenv:Body>
+</soapenv:Envelope>
