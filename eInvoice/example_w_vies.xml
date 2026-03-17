@@ -1,0 +1,19 @@
+<cac:AccountingSupplierParty>
+  <cac:Party>
+    <cac:PartyName>
+      <cbc:Name>Acme GmbH</cbc:Name>
+    </cac:PartyName>
+    <cac:PostalAddress>
+      <cbc:StreetName>Hauptstrasse 10</cbc:StreetName>
+      <cbc:CityName>Berlin</cbc:CityName>
+      <cbc:PostalZone>10115</cbc:PostalZone>
+      <cac:Country>
+        <cbc:IdentificationCode>DE</cbc:IdentificationCode>
+      </cac:Country>
+    </cac:PostalAddress>
+    <cac:PartyTaxScheme>
+      <cbc:CompanyID>DE123456789</cbc:CompanyID>
+      <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+    </cac:PartyTaxScheme>
+  </cac:Party>
+</cac:AccountingSupplierParty>
