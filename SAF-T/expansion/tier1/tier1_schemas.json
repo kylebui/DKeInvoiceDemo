@@ -1,0 +1,210 @@
+{
+  "_meta": {
+    "title": "Denmark Demo — Tier 1 Schemas",
+    "description": "Simplified Peppol BIS 3.0 and SAF-T schemas for demo. Tier 1 = single-document integrity: structural completeness + internal math checks.",
+    "tier": 1,
+    "version": "1.0"
+  },
+
+  "PeppolInvoice": {
+    "_description": "Simplified Peppol BIS 3.0 UBL invoice schema for demo API",
+    "fields": {
+      "InvoiceID":        { "type": "string",  "required": true,  "example": "INV-2024-0088" },
+      "IssueDate":        { "type": "date",    "required": true,  "format": "YYYY-MM-DD", "rule": "Must not be a future date" },
+      "DueDate":          { "type": "date",    "required": false, "format": "YYYY-MM-DD" },
+      "CurrencyCode":     { "type": "string",  "required": true,  "example": "DKK" },
+      "Supplier": {
+        "required": true,
+        "fields": {
+          "Name":       { "type": "string", "required": true },
+          "CVR":        { "type": "string", "required": true,  "pattern": "^[0-9]{8}$", "example": "12345678" },
+          "VATNumber":  { "type": "string", "required": true,  "pattern": "^DK[0-9]{8}$", "example": "DK12345678" },
+          "Address":    { "type": "string", "required": false }
+        }
+      },
+      "Buyer": {
+        "required": true,
+        "fields": {
+          "Name":       { "type": "string", "required": true },
+          "CVR":        { "type": "string", "required": true,  "pattern": "^[0-9]{8}$", "example": "87654321" },
+          "Address":    { "type": "string", "required": false }
+        }
+      },
+      "Lines": {
+        "type": "array",
+        "required": true,
+        "minItems": 1,
+        "item": {
+          "LineID":               { "type": "string",  "required": true },
+          "Description":          { "type": "string",  "required": true },
+          "Quantity":             { "type": "decimal", "required": true },
+          "UnitPrice":            { "type": "decimal", "required": true },
+          "LineExtensionAmount":  { "type": "decimal", "required": true },
+          "TaxCategory":          { "type": "string",  "required": true,  "values": ["S", "Z", "E"], "description": "S=Standard, Z=Zero, E=Exempt" },
+          "TaxRate":              { "type": "decimal", "required": true,  "example": 0.25 },
+          "TaxAmount":            { "type": "decimal", "required": true }
+        }
+      },
+      "Totals": {
+        "required": true,
+        "fields": {
+          "LineExtensionAmount":  { "type": "decimal", "required": true },
+          "TaxExclusiveAmount":   { "type": "decimal", "required": true },
+          "TaxAmount":            { "type": "decimal", "required": true },
+          "TaxInclusiveAmount":   { "type": "decimal", "required": true },
+          "PayableAmount":        { "type": "decimal", "required": true }
+        }
+      }
+    },
+    "tier1_validation_rules": [
+      {
+        "ruleID": "PEPPOL-T1-001",
+        "name": "Required fields present",
+        "description": "InvoiceID, IssueDate, CurrencyCode, Supplier.CVR, Supplier.VATNumber, Buyer.CVR must all be present and non-empty",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "PEPPOL-T1-002",
+        "name": "Issue date not in future",
+        "description": "IssueDate <= today",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "PEPPOL-T1-003",
+        "name": "Line extension amount math",
+        "description": "For each line: round(Quantity × UnitPrice, 2) == LineExtensionAmount",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "PEPPOL-T1-004",
+        "name": "Line tax amount math",
+        "description": "For each line (TaxCategory=S): round(LineExtensionAmount × TaxRate, 2) == TaxAmount",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "PEPPOL-T1-005",
+        "name": "Header LineExtensionAmount matches sum of lines",
+        "description": "Totals.LineExtensionAmount == sum of all Lines[].LineExtensionAmount",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "PEPPOL-T1-006",
+        "name": "Header TaxAmount matches sum of line taxes",
+        "description": "Totals.TaxAmount == sum of all Lines[].TaxAmount",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "PEPPOL-T1-007",
+        "name": "Gross amount math",
+        "description": "Totals.TaxInclusiveAmount == Totals.TaxExclusiveAmount + Totals.TaxAmount",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "PEPPOL-T1-008",
+        "name": "Payable amount matches gross",
+        "description": "Totals.PayableAmount == Totals.TaxInclusiveAmount (for standard invoices with no prepayment)",
+        "severity": "WARNING"
+      }
+    ]
+  },
+
+  "SAFT": {
+    "_description": "Simplified SAF-T (Standard Audit File for Tax) schema for demo. Covers sales invoices within a single reporting period.",
+    "fields": {
+      "Header": {
+        "required": true,
+        "fields": {
+          "TaxRegistrationNumber": { "type": "string",  "required": true,  "pattern": "^DK[0-9]{8}$", "example": "DK12345678" },
+          "CompanyCVR":            { "type": "string",  "required": true,  "pattern": "^[0-9]{8}$" },
+          "BusinessName":          { "type": "string",  "required": true },
+          "PeriodStart":           { "type": "date",    "required": true,  "format": "YYYY-MM-DD" },
+          "PeriodEnd":             { "type": "date",    "required": true,  "format": "YYYY-MM-DD", "rule": "Must be >= PeriodStart" },
+          "CurrencyCode":          { "type": "string",  "required": true,  "example": "DKK" }
+        }
+      },
+      "SalesInvoices": {
+        "type": "array",
+        "required": true,
+        "minItems": 0,
+        "item": {
+          "InvoiceNo":    { "type": "string",  "required": true },
+          "InvoiceDate":  { "type": "date",    "required": true, "format": "YYYY-MM-DD", "rule": "Must be within Header.PeriodStart to Header.PeriodEnd" },
+          "CustomerCVR":  { "type": "string",  "required": true, "pattern": "^[0-9]{8}$" },
+          "Lines": {
+            "type": "array",
+            "required": true,
+            "minItems": 1,
+            "item": {
+              "LineID":       { "type": "string",  "required": true },
+              "Description":  { "type": "string",  "required": false },
+              "NetAmount":    { "type": "decimal", "required": true },
+              "TaxCode":      { "type": "string",  "required": true,  "values": ["MVA25", "MVA0", "MVAFRI"], "description": "MVA25=25% standard, MVA0=zero-rated, MVAFRI=exempt" },
+              "TaxRate":      { "type": "decimal", "required": true,  "example": 0.25 },
+              "TaxBase":      { "type": "decimal", "required": true,  "description": "Amount to which tax rate is applied; normally equals NetAmount" },
+              "TaxAmount":    { "type": "decimal", "required": true },
+              "GrossAmount":  { "type": "decimal", "required": true }
+            }
+          },
+          "DocumentTotals": {
+            "required": true,
+            "fields": {
+              "NetTotal":    { "type": "decimal", "required": true },
+              "TaxPayable":  { "type": "decimal", "required": true },
+              "GrossTotal":  { "type": "decimal", "required": true }
+            }
+          }
+        }
+      }
+    },
+    "tier1_validation_rules": [
+      {
+        "ruleID": "SAFT-T1-001",
+        "name": "Required header fields present",
+        "description": "Header.TaxRegistrationNumber, CompanyCVR, BusinessName, PeriodStart, PeriodEnd, CurrencyCode must all be present",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "SAFT-T1-002",
+        "name": "Period end >= period start",
+        "description": "Header.PeriodEnd >= Header.PeriodStart",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "SAFT-T1-003",
+        "name": "Invoice date within reporting period",
+        "description": "For each invoice: InvoiceDate >= Header.PeriodStart AND InvoiceDate <= Header.PeriodEnd",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "SAFT-T1-004",
+        "name": "Line tax rate consistency",
+        "description": "For each line where TaxCode=MVA25: round(TaxBase × TaxRate, 2) == TaxAmount AND TaxRate == 0.25. For MVA0: TaxAmount == 0.00",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "SAFT-T1-005",
+        "name": "Line gross amount math",
+        "description": "For each line: round(NetAmount + TaxAmount, 2) == GrossAmount",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "SAFT-T1-006",
+        "name": "Document NetTotal matches sum of line NetAmounts",
+        "description": "DocumentTotals.NetTotal == sum of all Lines[].NetAmount",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "SAFT-T1-007",
+        "name": "Document TaxPayable matches sum of line TaxAmounts",
+        "description": "DocumentTotals.TaxPayable == sum of all Lines[].TaxAmount",
+        "severity": "ERROR"
+      },
+      {
+        "ruleID": "SAFT-T1-008",
+        "name": "Document gross math",
+        "description": "DocumentTotals.GrossTotal == DocumentTotals.NetTotal + DocumentTotals.TaxPayable",
+        "severity": "ERROR"
+      }
+    ]
+  }
+}

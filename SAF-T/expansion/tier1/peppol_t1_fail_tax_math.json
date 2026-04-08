@@ -1,0 +1,49 @@
+{
+  "_scenario": "PEPPOL-T1-004-FAIL",
+  "_description": "PEPPOL-T1-004: Line tax amount math error. Line 1: LineExtensionAmount=30000, TaxRate=0.25 → correct TaxAmount should be 7500.00, but is stated as 6000.00. Header TaxAmount adjusted to match — validator must catch the per-line rate violation.",
+  "_injected_error": "Line 1 TaxAmount: 6000.00 (correct: 30000 × 0.25 = 7500.00). Effective rate stated: 0.20. Delta = -1500.00",
+  "InvoiceID": "INV-2024-0088",
+  "IssueDate": "2024-03-15",
+  "DueDate": "2024-04-14",
+  "CurrencyCode": "DKK",
+  "Supplier": {
+    "Name": "Nordjysk Byggecenter A/S",
+    "CVR": "12345678",
+    "VATNumber": "DK12345678",
+    "Address": "Industrivej 14, 9000 Aalborg"
+  },
+  "Buyer": {
+    "Name": "Frederiksberg Kommune",
+    "CVR": "87654321",
+    "Address": "Smallegade 1, 2000 Frederiksberg"
+  },
+  "Lines": [
+    {
+      "LineID": "1",
+      "Description": "Konsulentydelser - Byggerådgivning",
+      "Quantity": 2,
+      "UnitPrice": 15000.00,
+      "LineExtensionAmount": 30000.00,
+      "TaxCategory": "S",
+      "TaxRate": 0.25,
+      "TaxAmount": 6000.00
+    },
+    {
+      "LineID": "2",
+      "Description": "Rejseomkostninger",
+      "Quantity": 1,
+      "UnitPrice": 5000.00,
+      "LineExtensionAmount": 5000.00,
+      "TaxCategory": "S",
+      "TaxRate": 0.25,
+      "TaxAmount": 1250.00
+    }
+  ],
+  "Totals": {
+    "LineExtensionAmount": 35000.00,
+    "TaxExclusiveAmount": 35000.00,
+    "TaxAmount": 7250.00,
+    "TaxInclusiveAmount": 42250.00,
+    "PayableAmount": 42250.00
+  }
+}

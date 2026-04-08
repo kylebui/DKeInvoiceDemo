@@ -1,0 +1,48 @@
+{
+  "_scenario": "PEPPOL-VALID",
+  "_description": "Valid Peppol invoice — all Tier 1 rules pass. Use as baseline for comparison.",
+  "InvoiceID": "INV-2024-0088",
+  "IssueDate": "2024-03-15",
+  "DueDate": "2024-04-14",
+  "CurrencyCode": "DKK",
+  "Supplier": {
+    "Name": "Nordjysk Byggecenter A/S",
+    "CVR": "12345678",
+    "VATNumber": "DK12345678",
+    "Address": "Industrivej 14, 9000 Aalborg"
+  },
+  "Buyer": {
+    "Name": "Frederiksberg Kommune",
+    "CVR": "87654321",
+    "Address": "Smallegade 1, 2000 Frederiksberg"
+  },
+  "Lines": [
+    {
+      "LineID": "1",
+      "Description": "Konsulentydelser - Byggerådgivning",
+      "Quantity": 2,
+      "UnitPrice": 15000.00,
+      "LineExtensionAmount": 30000.00,
+      "TaxCategory": "S",
+      "TaxRate": 0.25,
+      "TaxAmount": 7500.00
+    },
+    {
+      "LineID": "2",
+      "Description": "Rejseomkostninger",
+      "Quantity": 1,
+      "UnitPrice": 5000.00,
+      "LineExtensionAmount": 5000.00,
+      "TaxCategory": "S",
+      "TaxRate": 0.25,
+      "TaxAmount": 1250.00
+    }
+  ],
+  "Totals": {
+    "LineExtensionAmount": 35000.00,
+    "TaxExclusiveAmount": 35000.00,
+    "TaxAmount": 8750.00,
+    "TaxInclusiveAmount": 43750.00,
+    "PayableAmount": 43750.00
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "_scenario": "SAFT-VALID",
+  "_description": "Valid SAF-T document — all Tier 1 rules pass. Q1 2024 reporting period. Matches the Peppol baseline invoice INV-2024-0088 plus one additional invoice.",
+  "Header": {
+    "TaxRegistrationNumber": "DK12345678",
+    "CompanyCVR": "12345678",
+    "BusinessName": "Nordjysk Byggecenter A/S",
+    "PeriodStart": "2024-01-01",
+    "PeriodEnd": "2024-03-31",
+    "CurrencyCode": "DKK"
+  },
+  "SalesInvoices": [
+    {
+      "InvoiceNo": "INV-2024-0088",
+      "InvoiceDate": "2024-03-15",
+      "CustomerCVR": "87654321",
+      "Lines": [
+        {
+          "LineID": "1",
+          "Description": "Konsulentydelser - Byggerådgivning",
+          "NetAmount": 30000.00,
+          "TaxCode": "MVA25",
+          "TaxRate": 0.25,
+          "TaxBase": 30000.00,
+          "TaxAmount": 7500.00,
+          "GrossAmount": 37500.00
+        },
+        {
+          "LineID": "2",
+          "Description": "Rejseomkostninger",
+          "NetAmount": 5000.00,
+          "TaxCode": "MVA25",
+          "TaxRate": 0.25,
+          "TaxBase": 5000.00,
+          "TaxAmount": 1250.00,
+          "GrossAmount": 6250.00
+        }
+      ],
+      "DocumentTotals": {
+        "NetTotal": 35000.00,
+        "TaxPayable": 8750.00,
+        "GrossTotal": 43750.00
+      }
+    },
+    {
+      "InvoiceNo": "INV-2024-0071",
+      "InvoiceDate": "2024-01-22",
+      "CustomerCVR": "55512340",
+      "Lines": [
+        {
+          "LineID": "1",
+          "Description": "Materialer - Isolering",
+          "NetAmount": 12000.00,
+          "TaxCode": "MVA25",
+          "TaxRate": 0.25,
+          "TaxBase": 12000.00,
+          "TaxAmount": 3000.00,
+          "GrossAmount": 15000.00
+        }
+      ],
+      "DocumentTotals": {
+        "NetTotal": 12000.00,
+        "TaxPayable": 3000.00,
+        "GrossTotal": 15000.00
+      }
+    }
+  ]
+}

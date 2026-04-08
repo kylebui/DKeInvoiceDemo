@@ -1,0 +1,224 @@
+{
+  "_meta": {
+    "title": "Denmark Demo — Tier 1 Expected Validation Results",
+    "description": "Expected API validation output for all Tier 1 test payloads. Use these to verify your validator implementation produces the correct rule IDs, severities, and messages.",
+    "tier": 1
+  },
+
+  "results": [
+
+    {
+      "payloadFile": "peppol_t1_valid.json",
+      "document": "INV-2024-0088",
+      "type": "PeppolInvoice",
+      "expectedOutcome": "PASS",
+      "violations": []
+    },
+
+    {
+      "payloadFile": "peppol_t1_fail_missing_field.json",
+      "document": "INV-2024-0088",
+      "type": "PeppolInvoice",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "PEPPOL-T1-001",
+          "severity": "ERROR",
+          "field": "Supplier.CVR",
+          "message": "Required field Supplier.CVR is missing.",
+          "regulatoryRef": "Momsbekendtgørelsen § 58 — invoices must identify the supplier by CVR"
+        },
+        {
+          "ruleID": "PEPPOL-T1-001",
+          "severity": "ERROR",
+          "field": "Supplier.VATNumber",
+          "message": "Required field Supplier.VATNumber is missing.",
+          "regulatoryRef": "Momsbekendtgørelsen § 58 — invoices must carry the supplier's VAT registration number"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "peppol_t1_fail_future_date.json",
+      "document": "INV-2024-0088",
+      "type": "PeppolInvoice",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "PEPPOL-T1-002",
+          "severity": "ERROR",
+          "field": "IssueDate",
+          "message": "IssueDate 2099-12-31 is in the future. Invoice cannot represent a completed taxable supply.",
+          "regulatoryRef": "Momslovens § 23 — VAT point arises on delivery; a future date has no valid tax point"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "peppol_t1_fail_line_math.json",
+      "document": "INV-2024-0088",
+      "type": "PeppolInvoice",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "PEPPOL-T1-003",
+          "severity": "ERROR",
+          "field": "Lines[0].LineExtensionAmount",
+          "message": "Line 1: Quantity (2) × UnitPrice (15000.00) = 30000.00, but LineExtensionAmount is 28000.00. Discrepancy = -2000.00 DKK.",
+          "regulatoryRef": "Momsbekendtgørelsen § 58 — invoice amounts must be arithmetically consistent"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "peppol_t1_fail_tax_math.json",
+      "document": "INV-2024-0088",
+      "type": "PeppolInvoice",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "PEPPOL-T1-004",
+          "severity": "ERROR",
+          "field": "Lines[0].TaxAmount",
+          "message": "Line 1: LineExtensionAmount (30000.00) × TaxRate (0.25) = 7500.00, but TaxAmount is 6000.00. Effective rate = 0.20. Discrepancy = -1500.00 DKK.",
+          "regulatoryRef": "Momslovens § 33 — standard VAT rate is 25%; stated rate and computed rate must agree"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "peppol_t1_fail_gross_math.json",
+      "document": "INV-2024-0088",
+      "type": "PeppolInvoice",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "PEPPOL-T1-007",
+          "severity": "ERROR",
+          "field": "Totals.TaxInclusiveAmount",
+          "message": "TaxExclusiveAmount (35000.00) + TaxAmount (8750.00) = 43750.00, but TaxInclusiveAmount is 42000.00. Discrepancy = -1750.00 DKK.",
+          "regulatoryRef": "Momsbekendtgørelsen § 58 — gross invoice amount must equal net + VAT"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "saft_t1_valid.json",
+      "documents": ["INV-2024-0088", "INV-2024-0071"],
+      "type": "SAFT",
+      "expectedOutcome": "PASS",
+      "violations": []
+    },
+
+    {
+      "payloadFile": "saft_t1_fail_line_vat_sum.json",
+      "documents": ["INV-2024-0088", "INV-2024-0071"],
+      "type": "SAFT",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "SAFT-T1-007",
+          "severity": "ERROR",
+          "field": "SalesInvoices[INV-2024-0088].DocumentTotals.TaxPayable",
+          "message": "INV-2024-0088: Sum of line TaxAmounts (7500.00 + 1250.00 = 8750.00) does not match DocumentTotals.TaxPayable (7000.00). Discrepancy = -1750.00 DKK.",
+          "regulatoryRef": "SAF-T krav (Skattestyrelsen) — header totals must reconcile with line-level detail"
+        },
+        {
+          "ruleID": "SAFT-T1-008",
+          "severity": "ERROR",
+          "field": "SalesInvoices[INV-2024-0088].DocumentTotals.GrossTotal",
+          "message": "INV-2024-0088: NetTotal (35000.00) + TaxPayable (7000.00) = 42000.00, which matches GrossTotal (42000.00) — but TaxPayable itself is incorrect (see SAFT-T1-007). Gross is internally consistent at the wrong value.",
+          "regulatoryRef": "SAF-T krav (Skattestyrelsen) — gross total integrity is contingent on correct TaxPayable"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "saft_t1_fail_net_vat_gross.json",
+      "documents": ["INV-2024-0088", "INV-2024-0071"],
+      "type": "SAFT",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "SAFT-T1-008",
+          "severity": "ERROR",
+          "field": "SalesInvoices[INV-2024-0088].DocumentTotals.GrossTotal",
+          "message": "INV-2024-0088: NetTotal (35000.00) + TaxPayable (8750.00) = 43750.00, but GrossTotal is 45000.00. Discrepancy = +1250.00 DKK.",
+          "regulatoryRef": "SAF-T krav (Skattestyrelsen) — GrossTotal = NetTotal + TaxPayable"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "saft_t1_fail_wrong_vat_rate.json",
+      "documents": ["INV-2024-0088", "INV-2024-0071"],
+      "type": "SAFT",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "SAFT-T1-004",
+          "severity": "ERROR",
+          "field": "SalesInvoices[INV-2024-0088].Lines[0].TaxAmount",
+          "message": "INV-2024-0088 Line 1: TaxCode=MVA25 (rate 0.25), TaxBase=30000.00 → expected TaxAmount=7500.00, but actual is 4500.00. Effective rate = 0.15. Discrepancy = -3000.00 DKK.",
+          "regulatoryRef": "Momslovens § 33 — MVA25 transactions must apply the 25% standard rate"
+        },
+        {
+          "ruleID": "SAFT-T1-007",
+          "severity": "ERROR",
+          "field": "SalesInvoices[INV-2024-0088].DocumentTotals.TaxPayable",
+          "message": "INV-2024-0088: Sum of corrected line TaxAmounts = 7500.00 + 1250.00 = 8750.00, but DocumentTotals.TaxPayable is 5750.00. Discrepancy = -3000.00 DKK.",
+          "regulatoryRef": "SAF-T krav (Skattestyrelsen) — header totals must reconcile with line-level detail"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "saft_t1_fail_date_outside_period.json",
+      "documents": ["INV-2024-0088", "INV-2024-0071"],
+      "type": "SAFT",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "SAFT-T1-003",
+          "severity": "ERROR",
+          "field": "SalesInvoices[INV-2024-0088].InvoiceDate",
+          "message": "INV-2024-0088: InvoiceDate 2024-06-10 falls outside the declared reporting period (2024-01-01 to 2024-03-31). Invoice belongs in Q2 2024 SAF-T.",
+          "regulatoryRef": "Momslovens § 57 — VAT must be reported in the period in which the tax point arises"
+        }
+      ]
+    },
+
+    {
+      "payloadFile": "saft_t1_fail_line_gross.json",
+      "documents": ["INV-2024-0088", "INV-2024-0071"],
+      "type": "SAFT",
+      "expectedOutcome": "FAIL",
+      "violations": [
+        {
+          "ruleID": "SAFT-T1-005",
+          "severity": "ERROR",
+          "field": "SalesInvoices[INV-2024-0088].Lines[0].GrossAmount",
+          "message": "INV-2024-0088 Line 1: NetAmount (30000.00) + TaxAmount (7500.00) = 37500.00, but GrossAmount is 39000.00. Discrepancy = +1500.00 DKK.",
+          "regulatoryRef": "SAF-T krav (Skattestyrelsen) — line GrossAmount must equal NetAmount + TaxAmount"
+        },
+        {
+          "ruleID": "SAFT-T1-008",
+          "severity": "ERROR",
+          "field": "SalesInvoices[INV-2024-0088].DocumentTotals.GrossTotal",
+          "message": "INV-2024-0088: NetTotal (35000.00) + TaxPayable (8750.00) = 43750.00, but GrossTotal is 45250.00. Discrepancy = +1500.00 DKK.",
+          "regulatoryRef": "SAF-T krav (Skattestyrelsen) — GrossTotal = NetTotal + TaxPayable"
+        }
+      ]
+    }
+
+  ],
+
+  "summary": {
+    "totalPayloads": 12,
+    "peppolPayloads": 6,
+    "saftPayloads": 6,
+    "passingPayloads": 2,
+    "failingPayloads": 10,
+    "uniqueRulesTested": ["PEPPOL-T1-001","PEPPOL-T1-002","PEPPOL-T1-003","PEPPOL-T1-004","PEPPOL-T1-007","SAFT-T1-003","SAFT-T1-004","SAFT-T1-005","SAFT-T1-007","SAFT-T1-008"]
+  }
+}

@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Simplified Danish SAF-T Financial Schema (Demo Version)
+  Based on: Danish SAF-T Financial Data v1.0 (Erhvervsstyrelsen / OECD SAF-T v2)
+  Target Namespace: urn:StandardAuditFile-Taxation-Financial:DK
+  Purpose: Three-Tier Fraud Detection Demo for SKAT
+  Version: 2.0 (expanded for three-tier validation)
+
+  Tier 1 additions: SourceID, BatchID, DebitCreditIndicator, GoodsServicesID,
+                    Supplier.RegistrationDate, GeneralLedgerEntries section
+  Tier 2 additions: SystemEntryDate (xs:dateTime) on invoices and GL transactions
+  Tier 3 additions: PeppolDocumentID on invoices for SAF-T <-> Peppol cross-match
+
+  NOTE: This is a simplified schema for demo purposes.
+        The official XSD is available at erhvervsstyrelsen.dk
+-->
+<xs:schema
+  xmlns="urn:StandardAuditFile-Taxation-Financial:DK"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="urn:StandardAuditFile-Taxation-Financial:DK"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified"
+  version="2.0"
+  id="SAF-T-DK">
+
+  <!-- ============================================================ -->
+  <!--  SIMPLE TYPE DEFINITIONS                                     -->
+  <!-- ============================================================ -->
+
+  <!-- Monetary amount: up to 18 digits, 2 decimal places -->
+  <xs:simpleType name="SAFmonetaryType">
+    <xs:restriction base="xs:decimal">
+      <xs:totalDigits value="18"/>
+      <xs:fractionDigits value="2"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Short text up to 18 characters -->
+  <xs:simpleType name="SAFshorttextType">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="18"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Medium text up to 35 characters -->
+  <xs:simpleType name="SAFmiddle1textType">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="35"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Long text up to 256 characters -->
+  <xs:simpleType name="SAFlongtextType">
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="256"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- CVR number: exactly 8 digits (Danish company identifier) -->
+  <xs:simpleType name="CVRNumberType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{8}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ISO 4217 currency code -->
+  <xs:simpleType name="ISOCurrencyCodeType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z]{3}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ISO 3166-1 alpha-2 country code -->
+  <xs:simpleType name="ISOCountryCodeType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z]{2}"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Tax type: VAT (Moms) or other -->
+  <xs:simpleType name="TaxTypeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="VAT"/>
+      <xs:enumeration value="OTHER"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Standard Danish VAT codes per SAF-T DK code list -->
+  <xs:simpleType name="StandardVatCodeType">
+    <xs:restriction base="xs:string">
+      <!-- Standard 25% VAT (Standardsats) -->
+      <xs:enumeration value="1"/>
+      <!-- Reduced rate (not currently active in DK but reserved) -->
+      <xs:enumeration value="2"/>
+      <!-- Zero-rated / exempt with deduction -->
+      <xs:enumeration value="3"/>
+      <!-- Exempt without deduction -->
+      <xs:enumeration value="4"/>
+      <!-- Reverse charge -->
+      <xs:enumeration value="5"/>
+      <!-- EU acquisition -->
+      <xs:enumeration value="6"/>
+      <!-- Import VAT -->
+      <xs:enumeration value="7"/>
+      <!-- Other / non-standard -->
+      <xs:enumeration value="99"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!--
+    Debit/Credit indicator used on invoice lines and GL transaction lines.
+    Tier 1: enables double-entry verification and sign-checking.
+    D = Debit, C = Credit
+  -->
+  <xs:simpleType name="DebitCreditIndicatorType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="D"/>
+      <xs:enumeration value="C"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!--
+    Goods or services indicator on invoice lines.
+    Tier 1: used to verify that tax codes match the supply type
+    (e.g., exempt codes should not appear on standard goods lines).
+  -->
+  <xs:simpleType name="GoodsServicesIDType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Goods"/>
+      <xs:enumeration value="Services"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ============================================================ -->
+  <!--  COMMON COMPLEX TYPES                                        -->
+  <!-- ============================================================ -->
+
+  <!-- Address structure (used for Company, Customer, Supplier) -->
+  <xs:complexType name="AddressType">
+    <xs:sequence>
+      <xs:element name="StreetName"      type="SAFmiddle1textType" minOccurs="0"/>
+      <xs:element name="AdditionalInfo"  type="SAFmiddle1textType" minOccurs="0"/>
+      <xs:element name="PostalCode"      type="SAFshorttextType"   minOccurs="0"/>
+      <xs:element name="City"            type="SAFmiddle1textType" minOccurs="0"/>
+      <xs:element name="Country"         type="ISOCountryCodeType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Company info block -->
+  <xs:complexType name="CompanyHeaderType">
+    <xs:sequence>
+      <xs:element name="RegistrationNumber" type="CVRNumberType"/>
+      <xs:element name="Name"               type="SAFlongtextType"/>
+      <xs:element name="Address"            type="AddressType"     minOccurs="0"/>
+      <xs:element name="TaxRegistration">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="TaxRegistrationNumber" type="CVRNumberType"/>
+            <xs:element name="TaxType"               type="SAFshorttextType"/>
+            <xs:element name="TaxAuthority"          type="SAFmiddle1textType" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ============================================================ -->
+  <!--  MASTER FILE TYPES                                           -->
+  <!-- ============================================================ -->
+
+  <!-- Single tax table entry -->
+  <xs:complexType name="TaxCodeDetailsType">
+    <xs:sequence>
+      <xs:element name="TaxCode"            type="SAFshorttextType"/>
+      <xs:element name="Description"        type="SAFlongtextType"    minOccurs="0"/>
+      <xs:element name="TaxType"            type="TaxTypeType"/>
+      <xs:element name="StandardTaxCode"    type="StandardVatCodeType"/>
+      <xs:element name="Country"            type="ISOCountryCodeType" minOccurs="0"/>
+      <xs:element name="TaxPercentage"      type="xs:decimal"         minOccurs="0"/>
+      <xs:element name="FlatTaxRate"        minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Amount"   type="SAFmonetaryType"/>
+            <xs:element name="Currency" type="ISOCurrencyCodeType" minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Customer master record -->
+  <xs:complexType name="CustomerType">
+    <xs:sequence>
+      <xs:element name="CustomerID"             type="SAFmiddle1textType"/>
+      <xs:element name="AccountID"              type="SAFmiddle1textType"  minOccurs="0"/>
+      <xs:element name="CustomerTaxID"          type="SAFmiddle1textType"  minOccurs="0"/>
+      <xs:element name="CompanyName"            type="SAFlongtextType"     minOccurs="0"/>
+      <xs:element name="BillingAddress"         type="AddressType"         minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!--
+    Supplier master record.
+    Tier 1 addition: RegistrationDate — date the supplier was registered (CVR).
+    Used to flag recently-registered suppliers issuing high-value invoices,
+    a common indicator in missing-trader and carousel VAT fraud.
+  -->
+  <xs:complexType name="SupplierType">
+    <xs:sequence>
+      <xs:element name="SupplierID"             type="SAFmiddle1textType"/>
+      <xs:element name="AccountID"              type="SAFmiddle1textType"  minOccurs="0"/>
+      <xs:element name="SupplierTaxID"          type="SAFmiddle1textType"  minOccurs="0"/>
+      <xs:element name="CompanyName"            type="SAFlongtextType"     minOccurs="0"/>
+      <xs:element name="BillingAddress"         type="AddressType"         minOccurs="0"/>
+      <!--
+        Tier 1: CVR registration date of the supplier.
+        Flag: supplier registered < 90 days before first invoice = phantom/missing-trader risk.
+      -->
+      <xs:element name="RegistrationDate"       type="xs:date"             minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ============================================================ -->
+  <!--  SOURCE DOCUMENT TYPES (Invoice Lines + Tax)                 -->
+  <!-- ============================================================ -->
+
+  <!-- Tax information on an invoice line -->
+  <xs:complexType name="TaxInformationType">
+    <xs:sequence>
+      <xs:element name="TaxType"        type="TaxTypeType"/>
+      <xs:element name="TaxCode"        type="SAFshorttextType"/>
+      <xs:element name="TaxPercentage"  type="xs:decimal"       minOccurs="0"/>
+      <xs:element name="TaxBase"        type="SAFmonetaryType"  minOccurs="0"/>
+      <xs:element name="TaxAmount">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Amount"          type="SAFmonetaryType"/>
+            <xs:element name="CurrencyCode"    type="ISOCurrencyCodeType" minOccurs="0"/>
+            <xs:element name="CurrencyAmount"  type="SAFmonetaryType"     minOccurs="0"/>
+            <xs:element name="ExchangeRate"    type="xs:decimal"          minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!--
+    A single line on a sales or purchase invoice.
+
+    Tier 1 additions:
+      DebitCreditIndicator — D or C; enables double-entry sum checks and
+                             sign verification across a transaction (all lines
+                             must net to zero when debits and credits balance).
+      GoodsServicesID      — "Goods" or "Services"; used to verify that the
+                             TaxCode applied is appropriate for the supply type
+                             (e.g., exempt codes should not appear on goods lines
+                             that are standard-rated in the tax table).
+  -->
+  <xs:complexType name="InvoiceLineType">
+    <xs:sequence>
+      <xs:element name="LineNumber"             type="xs:integer"/>
+      <xs:element name="AccountID"              type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="ProductCode"            type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="Description"            type="SAFlongtextType"       minOccurs="0"/>
+      <xs:element name="Quantity"               type="xs:decimal"            minOccurs="0"/>
+      <xs:element name="UnitOfMeasure"          type="SAFshorttextType"      minOccurs="0"/>
+      <xs:element name="UnitPrice"              type="SAFmonetaryType"       minOccurs="0"/>
+      <xs:element name="TaxPointDate"           type="xs:date"               minOccurs="0"/>
+      <xs:element name="Description2"           type="SAFlongtextType"       minOccurs="0"/>
+      <xs:element name="InvoiceLineAmount">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Amount"         type="SAFmonetaryType"/>
+            <xs:element name="CurrencyCode"   type="ISOCurrencyCodeType" minOccurs="0"/>
+            <xs:element name="CurrencyAmount" type="SAFmonetaryType"     minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <!-- Tier 1: D/C indicator for double-entry verification -->
+      <xs:element name="DebitCreditIndicator"   type="DebitCreditIndicatorType" minOccurs="0"/>
+      <!-- Tier 1: supply type for tax code consistency check -->
+      <xs:element name="GoodsServicesID"        type="GoodsServicesIDType"      minOccurs="0"/>
+      <xs:element name="TaxInformation"         type="TaxInformationType"       minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!--
+    Sales or Purchase invoice header.
+
+    Tier 1 additions:
+      SourceID      — ID of the user or system that entered the transaction.
+                      Unexpected SourceIDs on high-value invoices are a
+                      phantom-vendor risk indicator.
+      BatchID       — System batch identifier. Used to cluster off-hours
+                      postings and detect unusual batch submissions.
+
+    Tier 2 addition:
+      SystemEntryDate (xs:dateTime) — timestamp when the record was entered
+                      into the accounting system. Distinct from InvoiceDate
+                      (document date) and GLPostingDate (accounting date).
+                      Off-hours detection (e.g., 02:00 posting) requires the
+                      time component; xs:date alone is insufficient.
+
+    Tier 3 addition:
+      PeppolDocumentID — the Peppol BIS 3.0 document ID (UBL ID element)
+                      from the corresponding e-invoice. Used to perform the
+                      three-way cross-match: SAF-T InvoiceNo <-> Peppol ID,
+                      SupplierTaxID <-> Peppol SellerVATID, GrossTotal <->
+                      Peppol TaxInclusiveAmount. A missing or mismatched
+                      PeppolDocumentID signals invoice suppression or
+                      amount tampering.
+  -->
+  <xs:complexType name="InvoiceType">
+    <xs:sequence>
+      <xs:element name="InvoiceNo"              type="SAFmiddle1textType"/>
+      <xs:element name="CustomerID"             type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="SupplierID"             type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="Period"                 type="xs:integer"/>
+      <xs:element name="PeriodYear"             type="xs:integer"/>
+      <xs:element name="InvoiceDate"            type="xs:date"/>
+      <xs:element name="InvoiceType"            type="SAFshorttextType"      minOccurs="0"/>
+      <xs:element name="SpecialCircumstances"   type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="SystemID"               type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="GLPostingDate"          type="xs:date"               minOccurs="0"/>
+      <xs:element name="TransactionID"          type="SAFmiddle1textType"    minOccurs="0"/>
+      <!-- Tier 1: who/what entered the record -->
+      <xs:element name="SourceID"               type="SAFshorttextType"      minOccurs="0"/>
+      <!-- Tier 1/2: system batch reference -->
+      <xs:element name="BatchID"                type="SAFshorttextType"      minOccurs="0"/>
+      <!--
+        Tier 2: exact timestamp the record was entered in the accounting system.
+        xs:dateTime format: YYYY-MM-DDTHH:MM:SS  e.g. 2025-01-15T02:17:43
+        The time component is essential for off-hours posting detection.
+      -->
+      <xs:element name="SystemEntryDate"        type="xs:dateTime"           minOccurs="0"/>
+      <!--
+        Tier 3: Peppol BIS 3.0 document ID for cross-source matching.
+        Should match the ID element in the corresponding UBL Invoice.
+        Absence of this field on a purchase invoice that should have arrived
+        via Peppol is itself a suppression signal.
+      -->
+      <xs:element name="PeppolDocumentID"       type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="Line"                   type="InvoiceLineType"       minOccurs="1" maxOccurs="unbounded"/>
+      <xs:element name="DocumentTotals">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="TaxInformationTotals" type="TaxInformationType" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="NetTotal"   type="SAFmonetaryType"/>
+            <xs:element name="GrossTotal" type="SAFmonetaryType"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ============================================================ -->
+  <!--  GENERAL LEDGER ENTRIES TYPES                                -->
+  <!--                                                              -->
+  <!--  Tier 1: TransactionID sequence gap detection.               -->
+  <!--          Every invoice TransactionID should map to exactly   -->
+  <!--          one GL transaction. Gaps or orphan IDs flag         -->
+  <!--          suppressed or phantom entries.                      -->
+  <!--                                                              -->
+  <!--  Tier 2: Benford's Law and round-number analysis operate on  -->
+  <!--          the DebitAmount/CreditAmount values on GL lines,    -->
+  <!--          which differ from invoice totals and provide an     -->
+  <!--          independent signal set.                             -->
+  <!-- ============================================================ -->
+
+  <!--
+    A single GL transaction line (journal entry line).
+    Each Transaction must balance: sum of DebitAmounts = sum of CreditAmounts.
+  -->
+  <xs:complexType name="GlTransactionLineType">
+    <xs:sequence>
+      <xs:element name="RecordID"           type="SAFshorttextType"/>
+      <xs:element name="AccountID"          type="SAFmiddle1textType"/>
+      <xs:element name="Description"        type="SAFlongtextType"       minOccurs="0"/>
+      <xs:element name="CustomerID"         type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="SupplierID"         type="SAFmiddle1textType"    minOccurs="0"/>
+      <!--
+        Link back to the source invoice.
+        Tier 1: presence of SourceDocumentID allows detection of GL entries
+        with no matching invoice (phantom) or invoices with no GL posting
+        (suppression).
+      -->
+      <xs:element name="SourceDocumentID"   type="SAFmiddle1textType"    minOccurs="0"/>
+      <!-- Debit amount — use DebitAmount OR CreditAmount, not both -->
+      <xs:element name="DebitAmount"        minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Amount"         type="SAFmonetaryType"/>
+            <xs:element name="CurrencyCode"   type="ISOCurrencyCodeType" minOccurs="0"/>
+            <xs:element name="CurrencyAmount" type="SAFmonetaryType"     minOccurs="0"/>
+            <xs:element name="ExchangeRate"   type="xs:decimal"          minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <!-- Credit amount — use DebitAmount OR CreditAmount, not both -->
+      <xs:element name="CreditAmount"       minOccurs="0">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Amount"         type="SAFmonetaryType"/>
+            <xs:element name="CurrencyCode"   type="ISOCurrencyCodeType" minOccurs="0"/>
+            <xs:element name="CurrencyAmount" type="SAFmonetaryType"     minOccurs="0"/>
+            <xs:element name="ExchangeRate"   type="xs:decimal"          minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="TaxInformation"     type="TaxInformationType"    minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!--
+    A GL transaction (journal voucher).
+
+    Tier 1: TransactionID must be unique and sequential within a journal.
+            Gaps in the sequence are a suppression indicator.
+
+    Tier 2: SystemEntryDate (dateTime) enables off-hours posting detection
+            (e.g., entries posted at 02:00 AM are statistically anomalous).
+            SourceID allows clustering by operator to detect unusual
+            activity patterns.
+  -->
+  <xs:complexType name="GlTransactionType">
+    <xs:sequence>
+      <!--
+        Tier 1: primary key for sequence gap analysis.
+        Should form a gapless sequence within each Journal.
+      -->
+      <xs:element name="TransactionID"      type="SAFmiddle1textType"/>
+      <xs:element name="Period"             type="xs:integer"/>
+      <xs:element name="PeriodYear"         type="xs:integer"/>
+      <xs:element name="TransactionDate"    type="xs:date"/>
+      <xs:element name="GLPostingDate"      type="xs:date"               minOccurs="0"/>
+      <!--
+        Tier 2: exact system entry timestamp.
+        xs:dateTime: YYYY-MM-DDTHH:MM:SS  (no timezone suffix needed for demo)
+      -->
+      <xs:element name="SystemEntryDate"    type="xs:dateTime"           minOccurs="0"/>
+      <!-- Tier 1/2: operator or system that created the entry -->
+      <xs:element name="SourceID"           type="SAFshorttextType"      minOccurs="0"/>
+      <xs:element name="Description"        type="SAFlongtextType"       minOccurs="0"/>
+      <!-- Tier 2: batch reference for off-hours batch clustering -->
+      <xs:element name="BatchID"            type="SAFshorttextType"      minOccurs="0"/>
+      <!-- Cross-reference to Peppol document (Tier 3) -->
+      <xs:element name="PeppolDocumentID"   type="SAFmiddle1textType"    minOccurs="0"/>
+      <xs:element name="Line"               type="GlTransactionLineType" minOccurs="1" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- A journal (collection of transactions) -->
+  <xs:complexType name="JournalType">
+    <xs:sequence>
+      <xs:element name="JournalID"          type="SAFshorttextType"/>
+      <xs:element name="Description"        type="SAFlongtextType"       minOccurs="0"/>
+      <xs:element name="Type"               type="SAFshorttextType"      minOccurs="0"/>
+      <xs:element name="Transaction"        type="GlTransactionType"     minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ============================================================ -->
+  <!--  ROOT ELEMENT: AuditFile                                     -->
+  <!-- ============================================================ -->
+
+  <xs:element name="AuditFile">
+    <xs:complexType>
+      <xs:sequence>
+
+        <!-- HEADER -->
+        <xs:element name="Header">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="AuditFileVersion"     type="SAFshorttextType"/>
+              <xs:element name="AuditFileCountry"     type="ISOCountryCodeType"/>
+              <xs:element name="AuditFileDateCreated" type="xs:date"/>
+              <xs:element name="SoftwareCompanyName"  type="SAFlongtextType"   minOccurs="0"/>
+              <xs:element name="SoftwareID"           type="SAFlongtextType"   minOccurs="0"/>
+              <xs:element name="SoftwareVersion"      type="SAFshorttextType"  minOccurs="0"/>
+              <xs:element name="Company"              type="CompanyHeaderType"/>
+              <xs:element name="DefaultCurrencyCode"  type="ISOCurrencyCodeType"/>
+              <xs:element name="SelectionStartDate"   type="xs:date"/>
+              <xs:element name="SelectionEndDate"     type="xs:date"/>
+              <xs:element name="HeaderComment"        type="SAFlongtextType"   minOccurs="0"/>
+              <xs:element name="FiscalYear"           type="SAFshorttextType"  minOccurs="0"/>
+              <xs:element name="NumberOfParts"        type="xs:integer"        minOccurs="0"/>
+              <xs:element name="PartNumber"           type="xs:integer"        minOccurs="0"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <!-- MASTER FILES -->
+        <xs:element name="MasterFiles" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <!-- Tax Table (critical for VAT assessment) -->
+              <xs:element name="TaxTable" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="TaxTableEntry" type="TaxCodeDetailsType"
+                                minOccurs="0" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <!-- Customers -->
+              <xs:element name="Customers" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Customer" type="CustomerType"
+                                minOccurs="0" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <!-- Suppliers -->
+              <xs:element name="Suppliers" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Supplier" type="SupplierType"
+                                minOccurs="0" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <!--
+          GENERAL LEDGER ENTRIES
+          Tier 1: TransactionID sequence gap detection.
+                  Each invoice should have a corresponding GL transaction via
+                  TransactionID. Orphaned or missing IDs flag suppression.
+          Tier 2: DebitAmount/CreditAmount values on GL lines are the primary
+                  input for Benford's Law digit frequency analysis and
+                  round-number clustering (independent of invoice totals).
+        -->
+        <xs:element name="GeneralLedgerEntries" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <!-- Total number of GL transaction lines across all journals -->
+              <xs:element name="NumberOfEntries"  type="xs:integer"      minOccurs="0"/>
+              <xs:element name="TotalDebit"       type="SAFmonetaryType" minOccurs="0"/>
+              <xs:element name="TotalCredit"      type="SAFmonetaryType" minOccurs="0"/>
+              <xs:element name="Journal"          type="JournalType"
+                          minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <!-- SOURCE DOCUMENTS -->
+        <xs:element name="SourceDocuments" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <!-- Sales Invoices (Output VAT) -->
+              <xs:element name="SalesInvoices" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="NumberOfEntries"  type="xs:integer"      minOccurs="0"/>
+                    <xs:element name="TotalDebit"       type="SAFmonetaryType" minOccurs="0"/>
+                    <xs:element name="TotalCredit"      type="SAFmonetaryType" minOccurs="0"/>
+                    <xs:element name="Invoice"          type="InvoiceType"
+                                minOccurs="0" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <!-- Purchase Invoices (Input VAT) -->
+              <xs:element name="PurchaseInvoices" minOccurs="0">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="NumberOfEntries"  type="xs:integer"      minOccurs="0"/>
+                    <xs:element name="TotalDebit"       type="SAFmonetaryType" minOccurs="0"/>
+                    <xs:element name="TotalCredit"      type="SAFmonetaryType" minOccurs="0"/>
+                    <xs:element name="Invoice"          type="InvoiceType"
+                                minOccurs="0" maxOccurs="unbounded"/>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

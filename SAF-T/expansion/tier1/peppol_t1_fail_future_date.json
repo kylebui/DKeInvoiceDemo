@@ -1,0 +1,49 @@
+{
+  "_scenario": "PEPPOL-T1-002-FAIL",
+  "_description": "PEPPOL-T1-002: Invoice date is in the future. IssueDate is set to 2099-12-31. A future-dated invoice is structurally invalid — it cannot represent a completed taxable supply and may indicate pre-dating to manipulate VAT periods.",
+  "_injected_error": "IssueDate: 2099-12-31 (must be <= today)",
+  "InvoiceID": "INV-2024-0088",
+  "IssueDate": "2099-12-31",
+  "DueDate": "2100-01-30",
+  "CurrencyCode": "DKK",
+  "Supplier": {
+    "Name": "Nordjysk Byggecenter A/S",
+    "CVR": "12345678",
+    "VATNumber": "DK12345678",
+    "Address": "Industrivej 14, 9000 Aalborg"
+  },
+  "Buyer": {
+    "Name": "Frederiksberg Kommune",
+    "CVR": "87654321",
+    "Address": "Smallegade 1, 2000 Frederiksberg"
+  },
+  "Lines": [
+    {
+      "LineID": "1",
+      "Description": "Konsulentydelser - Byggerådgivning",
+      "Quantity": 2,
+      "UnitPrice": 15000.00,
+      "LineExtensionAmount": 30000.00,
+      "TaxCategory": "S",
+      "TaxRate": 0.25,
+      "TaxAmount": 7500.00
+    },
+    {
+      "LineID": "2",
+      "Description": "Rejseomkostninger",
+      "Quantity": 1,
+      "UnitPrice": 5000.00,
+      "LineExtensionAmount": 5000.00,
+      "TaxCategory": "S",
+      "TaxRate": 0.25,
+      "TaxAmount": 1250.00
+    }
+  ],
+  "Totals": {
+    "LineExtensionAmount": 35000.00,
+    "TaxExclusiveAmount": 35000.00,
+    "TaxAmount": 8750.00,
+    "TaxInclusiveAmount": 43750.00,
+    "PayableAmount": 43750.00
+  }
+}
