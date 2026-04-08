@@ -1,0 +1,989 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SAF-T Financial (Simplified Demo)
+  Company:  Bergstrom Byg ApS
+  CVR:      31445670
+  Period:   Q1 2024 (2024-01-01 to 2024-03-31)
+
+  FRAUD SIGNALS EMBEDDED:
+    T1-A  Invoice sequence gap (BB-2024-0103, BB-2024-0104 missing from SalesInvoices)
+    T1-B  Phantom supplier Phantom Leverandor ApS (CVR 40000001, not in MasterFiles)
+    T1-C  Tax code misclassification on BB-2024-0105 (SE00 instead of SE25)
+    T1-D  TaxPointDate shifted into Q2 on BB-2024-0105 and BB-2024-0106
+    T2-A  Benford's Law: 19 of 60 journal entries start with digit 5
+    T2-B  Round-number clustering: 6 entries just below DKK 100,000
+    T2-C  Off-hours entries: 4 high-value postings between midnight and 04:00 on weekends
+    T3-B  BB-2024-0105 booked at DKK 120,000 (Peppol shows DKK 150,000)
+    T3-C  BB-2024-0102 booked at DKK 60,000 (Peppol and buyer SAF-T show DKK 75,000)
+-->
+<AuditFile xmlns="urn:StandardAuditFile-Taxation-Financial:DK">
+
+  <!-- =========================================================
+       HEADER
+       ========================================================= -->
+  <Header>
+    <AuditFileVersion>1.0</AuditFileVersion>
+    <AuditFileCountry>DK</AuditFileCountry>
+    <AuditFileDateCreated>2024-04-10</AuditFileDateCreated>
+    <SoftwareCompanyName>Bergstrom Byg Internal ERP</SoftwareCompanyName>
+    <SoftwareID>ByggeSoft</SoftwareID>
+    <SoftwareVersion>3.2.1</SoftwareVersion>
+    <Company>
+      <RegistrationNumber>31445670</RegistrationNumber>
+      <Name>Bergstrom Byg ApS</Name>
+      <Address>
+        <StreetName>Industrivej 14</StreetName>
+        <City>Koege</City>
+        <PostalCode>4600</PostalCode>
+        <Country>DK</Country>
+      </Address>
+      <TaxRegistrationNumber>DK31445670</TaxRegistrationNumber>
+    </Company>
+    <DefaultCurrencyCode>DKK</DefaultCurrencyCode>
+    <SelectionStartDate>2024-01-01</SelectionStartDate>
+    <SelectionEndDate>2024-03-31</SelectionEndDate>
+    <HeaderComment>Q1 2024 SAF-T submission to SKAT</HeaderComment>
+  </Header>
+
+  <!-- =========================================================
+       MASTER FILES
+       ========================================================= -->
+  <MasterFiles>
+
+    <!-- TAX TABLE -->
+    <TaxTable>
+      <TaxTableEntry>
+        <TaxType>VAT</TaxType>
+        <TaxCode>SE25</TaxCode>
+        <Description>Standard moms 25%</Description>
+        <TaxPercentage>25.00</TaxPercentage>
+        <Country>DK</Country>
+      </TaxTableEntry>
+      <TaxTableEntry>
+        <TaxType>VAT</TaxType>
+        <!-- FRAUD T1-C: SE00 is zero-rated; Bergstrom incorrectly applies this
+             to domestic services on BB-2024-0105 -->
+        <TaxCode>SE00</TaxCode>
+        <Description>Nulmoms / eksport 0%</Description>
+        <TaxPercentage>0.00</TaxPercentage>
+        <Country>DK</Country>
+      </TaxTableEntry>
+    </TaxTable>
+
+    <!-- CUSTOMERS -->
+    <Customers>
+      <Customer>
+        <CustomerID>C001</CustomerID>
+        <AccountID>10100</AccountID>
+        <CustomerTaxID>DK33127890</CustomerTaxID>
+        <CompanyName>Kastrup Ejendomme ApS</CompanyName>
+        <Contact>Mette Larsen</Contact>
+        <BillingAddress>
+          <StreetName>Taarnvej 8</StreetName>
+          <City>Kastrup</City>
+          <PostalCode>2770</PostalCode>
+          <Country>DK</Country>
+        </BillingAddress>
+      </Customer>
+      <Customer>
+        <CustomerID>C002</CustomerID>
+        <AccountID>10101</AccountID>
+        <CustomerTaxID>DK29954410</CustomerTaxID>
+        <CompanyName>Holst Consulting ApS</CompanyName>
+        <Contact>Anders Holst</Contact>
+        <BillingAddress>
+          <StreetName>Blegdamsvej 22</StreetName>
+          <City>Kobenhavn N</City>
+          <PostalCode>2200</PostalCode>
+          <Country>DK</Country>
+        </BillingAddress>
+      </Customer>
+    </Customers>
+
+    <!-- SUPPLIERS
+         NOTE T1-B: Phantom Leverandor ApS (CVR 40000001) is intentionally
+         ABSENT from this list. It appears only in PurchaseInvoices. -->
+    <Suppliers>
+      <Supplier>
+        <SupplierID>S001</SupplierID>
+        <AccountID>20100</AccountID>
+        <SupplierTaxID>DK28813450</SupplierTaxID>
+        <CompanyName>Norgaard Materialer AS</CompanyName>
+        <Contact>Poul Norgaard</Contact>
+        <BillingAddress>
+          <StreetName>Havnevej 3</StreetName>
+          <City>Roskilde</City>
+          <PostalCode>4000</PostalCode>
+          <Country>DK</Country>
+        </BillingAddress>
+      </Supplier>
+      <Supplier>
+        <SupplierID>S002</SupplierID>
+        <AccountID>20101</AccountID>
+        <SupplierTaxID>DK36201180</SupplierTaxID>
+        <CompanyName>Dalsgaard El og VVS ApS</CompanyName>
+        <Contact>Henrik Dalsgaard</Contact>
+        <BillingAddress>
+          <StreetName>Elektrovej 17</StreetName>
+          <City>Odense</City>
+          <PostalCode>5000</PostalCode>
+          <Country>DK</Country>
+        </BillingAddress>
+      </Supplier>
+    </Suppliers>
+
+    <!-- GENERAL LEDGER ACCOUNTS (abbreviated) -->
+    <GeneralLedgerAccounts>
+      <Account>
+        <AccountID>10100</AccountID>
+        <AccountDescription>Tilgodehavender fra kunder</AccountDescription>
+        <AccountType>Asset</AccountType>
+      </Account>
+      <Account>
+        <AccountID>20100</AccountID>
+        <AccountDescription>Leverandoergaeld</AccountDescription>
+        <AccountType>Liability</AccountType>
+      </Account>
+      <Account>
+        <AccountID>30100</AccountID>
+        <AccountDescription>Omsaetning byggeydelser</AccountDescription>
+        <AccountType>Revenue</AccountType>
+      </Account>
+      <Account>
+        <AccountID>40100</AccountID>
+        <AccountDescription>Materialeomkostninger</AccountDescription>
+        <AccountType>Expense</AccountType>
+      </Account>
+      <Account>
+        <AccountID>40200</AccountID>
+        <AccountDescription>Underleverandoer</AccountDescription>
+        <AccountType>Expense</AccountType>
+      </Account>
+      <Account>
+        <AccountID>76100</AccountID>
+        <AccountDescription>Salgsafgift (udgaaende moms)</AccountDescription>
+        <AccountType>Liability</AccountType>
+      </Account>
+      <Account>
+        <AccountID>76200</AccountID>
+        <AccountDescription>Indgaaende moms</AccountDescription>
+        <AccountType>Asset</AccountType>
+      </Account>
+    </GeneralLedgerAccounts>
+
+  </MasterFiles>
+
+  <!-- =========================================================
+       GENERAL LEDGER ENTRIES
+       Contains all journal entries for Q1 2024.
+
+       FRAUD SIGNALS:
+         T2-A  Benford anomaly: digit-5 entries marked [BENFORD]
+         T2-B  Threshold avoidance: entries just below 100,000 marked [THRESHOLD]
+         T2-C  Off-hours weekend postings marked [OFF-HOURS]
+       ========================================================= -->
+  <GeneralLedgerEntries>
+    <NumberOfEntries>60</NumberOfEntries>
+    <TotalDebit>1421450.00</TotalDebit>
+    <TotalCredit>1421450.00</TotalCredit>
+
+    <!-- Normal operating entries (representative sample) -->
+
+    <Journal>
+      <JournalID>JNL-2024-01</JournalID>
+      <Description>January 2024</Description>
+
+      <Transaction>
+        <TransactionID>JE-2024-0101</TransactionID>
+        <Period>1</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-01-15</TransactionDate>
+        <Description>Faktura BB-2024-0101 Kastrup Ejendomme ApS</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>10100</AccountID>
+          <Description>Debitor Kastrup Ejendomme ApS</Description>
+          <DebitAmount><Amount>100000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>30100</AccountID>
+          <Description>Omsaetning</Description>
+          <CreditAmount><Amount>80000.00</Amount></CreditAmount>
+        </Line>
+        <Line>
+          <RecordID>3</RecordID>
+          <AccountID>76100</AccountID>
+          <Description>Udgaaende moms 25%</Description>
+          <CreditAmount><Amount>20000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0102</TransactionID>
+        <Period>1</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-01-28</TransactionDate>
+        <!-- FRAUD T3-C: Booked at DKK 75,000 net / DKK 93,750 gross.
+             Bergstrom books DKK 60,000 net / DKK 75,000 gross here.
+             Holst Consulting SAF-T and Peppol both show DKK 75,000 net. -->
+        <Description>Faktura BB-2024-0102 Holst Consulting ApS [T3-C: understated]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>10100</AccountID>
+          <Description>Debitor Holst Consulting ApS</Description>
+          <DebitAmount><Amount>75000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>30100</AccountID>
+          <Description>Omsaetning</Description>
+          <CreditAmount><Amount>60000.00</Amount></CreditAmount>
+        </Line>
+        <Line>
+          <RecordID>3</RecordID>
+          <AccountID>76100</AccountID>
+          <Description>Udgaaende moms 25%</Description>
+          <CreditAmount><Amount>15000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <!-- NOTE T1-A / T3-A: JE for BB-2024-0103 and BB-2024-0104 are
+           entirely absent. No journal entries, no sales invoices.
+           Peppol network confirms both were delivered to Kastrup Ejendomme ApS. -->
+
+      <Transaction>
+        <TransactionID>JE-2024-0203</TransactionID>
+        <Period>1</Period>
+        <PeriodYear>2024</PeriodYear>
+        <!-- FRAUD T2-C: Sunday, 02:17 -->
+        <TransactionDate>2024-01-14</TransactionDate>
+        <PostingDate>2024-01-14T02:17:00</PostingDate>
+        <!-- FRAUD T2-B: DKK 96,000 - just below DKK 100,000 threshold -->
+        <!-- FRAUD T2-A: Starts with digit 9 — noted; the 5-digit cluster
+             entries appear below in Feb/Mar journals -->
+        <Description>Underleverandor betaling [OFF-HOURS][THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor</Description>
+          <DebitAmount><Amount>96000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>96000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0220</TransactionID>
+        <Period>1</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-01-20</TransactionDate>
+        <Description>Faktura NM-10045 Norgaard Materialer AS</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40100</AccountID>
+          <Description>Materialer</Description>
+          <DebitAmount><Amount>40000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>76200</AccountID>
+          <Description>Indgaaende moms 25%</Description>
+          <DebitAmount><Amount>10000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>3</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld Norgaard Materialer</Description>
+          <CreditAmount><Amount>50000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <!-- T2-B threshold entry -->
+      <Transaction>
+        <TransactionID>JE-2024-0441</TransactionID>
+        <Period>1</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-01-22</TransactionDate>
+        <Description>Underleverandor betaling [THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor</Description>
+          <DebitAmount><Amount>98500.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>98500.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0447</TransactionID>
+        <Period>1</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-01-31</TransactionDate>
+        <Description>Materialer kob [THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40100</AccountID>
+          <Description>Materialer</Description>
+          <DebitAmount><Amount>97000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>97000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+    </Journal>
+
+    <Journal>
+      <JournalID>JNL-2024-02</JournalID>
+      <Description>February 2024</Description>
+
+      <!-- FRAUD T1-B: Purchase invoice from phantom supplier.
+           No corresponding supplier exists in MasterFiles.
+           CVR 40000001 does not exist in the Danish CVR registry. -->
+      <Transaction>
+        <TransactionID>JE-2024-0310</TransactionID>
+        <Period>2</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-02-19</TransactionDate>
+        <Description>Faktura PL-00291 Phantom Leverandor ApS [T1-B: phantom supplier]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor Phantom Leverandor ApS</Description>
+          <DebitAmount><Amount>96000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>76200</AccountID>
+          <Description>Indgaaende moms - Phantom Leverandor ApS</Description>
+          <DebitAmount><Amount>24000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>3</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld Phantom Leverandor ApS</Description>
+          <CreditAmount><Amount>120000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0340</TransactionID>
+        <Period>2</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-02-05</TransactionDate>
+        <Description>Faktura DE-88812 Dalsgaard El og VVS ApS</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40100</AccountID>
+          <Description>El og VVS arbejde</Description>
+          <DebitAmount><Amount>24000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>76200</AccountID>
+          <Description>Indgaaende moms</Description>
+          <DebitAmount><Amount>6000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>3</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld Dalsgaard</Description>
+          <CreditAmount><Amount>30000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <!-- T2-A Benford cluster: digit-5 entries -->
+      <Transaction>
+        <TransactionID>JE-2024-0350</TransactionID>
+        <Period>2</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-02-06</TransactionDate>
+        <Description>Underleverandor betaling [BENFORD digit-5]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor</Description>
+          <DebitAmount><Amount>56000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>56000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0355</TransactionID>
+        <Period>2</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-02-07</TransactionDate>
+        <Description>Materialer [BENFORD digit-5]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40100</AccountID>
+          <Description>Materialer</Description>
+          <DebitAmount><Amount>52000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>52000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0391</TransactionID>
+        <Period>2</Period>
+        <PeriodYear>2024</PeriodYear>
+        <!-- FRAUD T2-C: Saturday, 03:44 -->
+        <TransactionDate>2024-02-24</TransactionDate>
+        <PostingDate>2024-02-24T03:44:00</PostingDate>
+        <!-- FRAUD T2-B: DKK 98,500 -->
+        <Description>Materialer kob [OFF-HOURS][THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40100</AccountID>
+          <Description>Materialer</Description>
+          <DebitAmount><Amount>98500.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>98500.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <!-- Additional digit-5 Benford entries -->
+      <Transaction>
+        <TransactionID>JE-2024-0360</TransactionID>
+        <Period>2</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-02-10</TransactionDate>
+        <Description>Underleverandor [BENFORD digit-5]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor</Description>
+          <DebitAmount><Amount>58500.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>58500.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0365</TransactionID>
+        <Period>2</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-02-12</TransactionDate>
+        <Description>Materialer [BENFORD digit-5]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40100</AccountID>
+          <Description>Materialer</Description>
+          <DebitAmount><Amount>54000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>54000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <!-- T2-B threshold entry -->
+      <Transaction>
+        <TransactionID>JE-2024-0452</TransactionID>
+        <Period>2</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-02-08</TransactionDate>
+        <Description>Udstyrsleje [THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Udstyrsleje</Description>
+          <DebitAmount><Amount>99200.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>99200.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+    </Journal>
+
+    <Journal>
+      <JournalID>JNL-2024-03</JournalID>
+      <Description>March 2024</Description>
+
+      <!-- FRAUD T1-C + T3-B + T1-D:
+           BB-2024-0105 is booked at DKK 120,000 net with SE00 (zero VAT).
+           Peppol shows DKK 150,000 net with DKK 30,000 VAT (SE25).
+           TaxPointDate is pushed to 2024-04-02 (Q2). -->
+      <Transaction>
+        <TransactionID>JE-2024-0501</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-28</TransactionDate>
+        <Description>Faktura BB-2024-0105 Kastrup Ejendomme [T1-C misclassified][T1-D shifted][T3-B tampered]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>10100</AccountID>
+          <Description>Debitor Kastrup Ejendomme ApS</Description>
+          <!-- T3-B: Peppol shows DKK 180,000 gross (150,000 + 30,000 VAT).
+               Bergstrom books DKK 120,000 with zero VAT = DKK 120,000 gross. -->
+          <DebitAmount><Amount>120000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>30100</AccountID>
+          <Description>Omsaetning - SE00 applied [MISCLASSIFIED - should be SE25]</Description>
+          <CreditAmount><Amount>120000.00</Amount></CreditAmount>
+        </Line>
+        <!-- No VAT line: zero-rated applied, so no 76100 posting -->
+      </Transaction>
+
+      <!-- FRAUD T1-D: BB-2024-0106 TaxPointDate shifted to 2024-04-01 -->
+      <Transaction>
+        <TransactionID>JE-2024-0502</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-30</TransactionDate>
+        <Description>Faktura BB-2024-0106 Kastrup Ejendomme [T1-D: TaxPointDate shifted to Q2]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>10100</AccountID>
+          <Description>Debitor Kastrup Ejendomme ApS</Description>
+          <DebitAmount><Amount>110000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>30100</AccountID>
+          <Description>Omsaetning</Description>
+          <CreditAmount><Amount>88000.00</Amount></CreditAmount>
+        </Line>
+        <Line>
+          <RecordID>3</RecordID>
+          <AccountID>76100</AccountID>
+          <Description>Udgaaende moms - TaxPointDate 2024-04-01 [SHIFTED TO Q2]</Description>
+          <CreditAmount><Amount>22000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <!-- T2-C off-hours entries -->
+      <Transaction>
+        <TransactionID>JE-2024-0412</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-02</TransactionDate>
+        <PostingDate>2024-03-02T01:08:00</PostingDate>
+        <Description>Udstyrsleje [OFF-HOURS][THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Udstyrsleje</Description>
+          <DebitAmount><Amount>99200.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>99200.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0461</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-05</TransactionDate>
+        <Description>Underleverandor betaling [THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor</Description>
+          <DebitAmount><Amount>96800.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>96800.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0478</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-17</TransactionDate>
+        <Description>Site arbejde [THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Site arbejde</Description>
+          <DebitAmount><Amount>98000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>98000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0488</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-16</TransactionDate>
+        <PostingDate>2024-03-16T23:52:00</PostingDate>
+        <Description>Underleverandor [OFF-HOURS][THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor</Description>
+          <DebitAmount><Amount>97000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>97000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0491</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-17</TransactionDate>
+        <Description>Underleverandor betaling [THRESHOLD]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor</Description>
+          <DebitAmount><Amount>99750.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>99750.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <!-- Additional digit-5 Benford entries for March -->
+      <Transaction>
+        <TransactionID>JE-2024-0460</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-04</TransactionDate>
+        <Description>Materialer [BENFORD digit-5]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40100</AccountID>
+          <Description>Materialer</Description>
+          <DebitAmount><Amount>51000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>51000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0465</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-06</TransactionDate>
+        <Description>Underleverandor [BENFORD digit-5]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor</Description>
+          <DebitAmount><Amount>55000.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>55000.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+      <Transaction>
+        <TransactionID>JE-2024-0470</TransactionID>
+        <Period>3</Period>
+        <PeriodYear>2024</PeriodYear>
+        <TransactionDate>2024-03-09</TransactionDate>
+        <Description>Materialer [BENFORD digit-5]</Description>
+        <Line>
+          <RecordID>1</RecordID>
+          <AccountID>40100</AccountID>
+          <Description>Materialer</Description>
+          <DebitAmount><Amount>57500.00</Amount></DebitAmount>
+        </Line>
+        <Line>
+          <RecordID>2</RecordID>
+          <AccountID>20100</AccountID>
+          <Description>Leverandoergaeld</Description>
+          <CreditAmount><Amount>57500.00</Amount></CreditAmount>
+        </Line>
+      </Transaction>
+
+    </Journal>
+
+  </GeneralLedgerEntries>
+
+  <!-- =========================================================
+       SOURCE DOCUMENTS
+       ========================================================= -->
+  <SourceDocuments>
+
+    <!-- SALES INVOICES
+         T1-A: BB-2024-0103 and BB-2024-0104 are ABSENT (suppressed).
+         T1-C: BB-2024-0105 uses SE00 (zero-rated) incorrectly.
+         T1-D: BB-2024-0105 and BB-2024-0106 have TaxPointDate in Q2.
+         T3-B: BB-2024-0105 amount is DKK 120,000 net vs Peppol DKK 150,000 net.
+         T3-C: BB-2024-0102 amount is DKK 60,000 net vs Peppol DKK 75,000 net. -->
+    <SalesInvoices>
+      <NumberOfEntries>4</NumberOfEntries>
+      <TotalDebit>0.00</TotalDebit>
+      <TotalCredit>345000.00</TotalCredit>
+
+      <Invoice>
+        <InvoiceNo>BB-2024-0101</InvoiceNo>
+        <CustomerID>C001</CustomerID>
+        <InvoiceDate>2024-01-15</InvoiceDate>
+        <TaxPointDate>2024-01-15</TaxPointDate>
+        <InvoiceType>Regular</InvoiceType>
+        <Description>Byggearbejde - Kastrup Ejendomme ApS</Description>
+        <NetTotal>80000.00</NetTotal>
+        <GrossTotal>100000.00</GrossTotal>
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>30100</AccountID>
+          <Description>Byggeydelser januar</Description>
+          <Quantity>1</Quantity>
+          <UnitPrice>80000.00</UnitPrice>
+          <LineTotal>80000.00</LineTotal>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>SE25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>80000.00</TaxBase>
+            <TaxAmount>20000.00</TaxAmount>
+          </TaxInformation>
+        </Line>
+      </Invoice>
+
+      <!-- T3-C: Booked at DKK 60,000 net. Peppol and Holst SAF-T show DKK 75,000 net. -->
+      <Invoice>
+        <InvoiceNo>BB-2024-0102</InvoiceNo>
+        <CustomerID>C002</CustomerID>
+        <InvoiceDate>2024-01-28</InvoiceDate>
+        <TaxPointDate>2024-01-28</TaxPointDate>
+        <InvoiceType>Regular</InvoiceType>
+        <Description>Renoveringsydelser - Holst Consulting ApS [T3-C: understated vs Peppol]</Description>
+        <NetTotal>60000.00</NetTotal>
+        <GrossTotal>75000.00</GrossTotal>
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>30100</AccountID>
+          <Description>Renoveringsydelser januar</Description>
+          <Quantity>1</Quantity>
+          <UnitPrice>60000.00</UnitPrice>
+          <LineTotal>60000.00</LineTotal>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>SE25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>60000.00</TaxBase>
+            <TaxAmount>15000.00</TaxAmount>
+          </TaxInformation>
+        </Line>
+      </Invoice>
+
+      <!-- T1-A + T3-A: BB-2024-0103 MISSING -->
+      <!-- T1-A + T3-A: BB-2024-0104 MISSING -->
+
+      <!-- T1-C + T1-D + T3-B:
+           Wrong tax code (SE00), wrong amount (DKK 120k vs DKK 150k), TaxPointDate in Q2 -->
+      <Invoice>
+        <InvoiceNo>BB-2024-0105</InvoiceNo>
+        <CustomerID>C001</CustomerID>
+        <InvoiceDate>2024-03-28</InvoiceDate>
+        <!-- T1-D: Pushed to Q2 -->
+        <TaxPointDate>2024-04-02</TaxPointDate>
+        <InvoiceType>Regular</InvoiceType>
+        <Description>Indretningsarbejde - Kastrup Ejendomme [T1-C: SE00 misclassified][T1-D: TaxPointDate Q2][T3-B: amount understated]</Description>
+        <!-- T3-B: Peppol shows NetTotal 150,000 / GrossTotal 180,000 -->
+        <NetTotal>120000.00</NetTotal>
+        <GrossTotal>120000.00</GrossTotal>
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>30100</AccountID>
+          <Description>Indretningsydelser</Description>
+          <Quantity>1</Quantity>
+          <UnitPrice>120000.00</UnitPrice>
+          <LineTotal>120000.00</LineTotal>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <!-- T1-C: Should be SE25 for domestic services -->
+            <TaxCode>SE00</TaxCode>
+            <TaxPercentage>0.00</TaxPercentage>
+            <TaxBase>120000.00</TaxBase>
+            <TaxAmount>0.00</TaxAmount>
+          </TaxInformation>
+        </Line>
+      </Invoice>
+
+      <!-- T1-D: TaxPointDate shifted to Q2 -->
+      <Invoice>
+        <InvoiceNo>BB-2024-0106</InvoiceNo>
+        <CustomerID>C001</CustomerID>
+        <InvoiceDate>2024-03-30</InvoiceDate>
+        <!-- T1-D: Pushed to Q2 -->
+        <TaxPointDate>2024-04-01</TaxPointDate>
+        <InvoiceType>Regular</InvoiceType>
+        <Description>Byggearbejde marts - Kastrup Ejendomme [T1-D: TaxPointDate shifted to Q2]</Description>
+        <NetTotal>88000.00</NetTotal>
+        <GrossTotal>110000.00</GrossTotal>
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>30100</AccountID>
+          <Description>Byggeydelser marts</Description>
+          <Quantity>1</Quantity>
+          <UnitPrice>88000.00</UnitPrice>
+          <LineTotal>88000.00</LineTotal>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>SE25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>88000.00</TaxBase>
+            <TaxAmount>22000.00</TaxAmount>
+          </TaxInformation>
+        </Line>
+      </Invoice>
+
+    </SalesInvoices>
+
+    <!-- PURCHASE INVOICES
+         T1-B: PL-00291 references Phantom Leverandor ApS (CVR 40000001)
+               which does not exist in MasterFiles Suppliers. -->
+    <PurchaseInvoices>
+      <NumberOfEntries>3</NumberOfEntries>
+      <TotalDebit>160000.00</TotalDebit>
+      <TotalCredit>0.00</TotalCredit>
+
+      <Invoice>
+        <InvoiceNo>NM-10045</InvoiceNo>
+        <!-- S001 = Norgaard Materialer AS, present in MasterFiles -->
+        <SupplierID>S001</SupplierID>
+        <InvoiceDate>2024-01-20</InvoiceDate>
+        <TaxPointDate>2024-01-20</TaxPointDate>
+        <InvoiceType>Regular</InvoiceType>
+        <Description>Materialer kob - Norgaard Materialer AS</Description>
+        <NetTotal>40000.00</NetTotal>
+        <GrossTotal>50000.00</GrossTotal>
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>40100</AccountID>
+          <Description>Bygningsmaterialer</Description>
+          <Quantity>1</Quantity>
+          <UnitPrice>40000.00</UnitPrice>
+          <LineTotal>40000.00</LineTotal>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>SE25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>40000.00</TaxBase>
+            <TaxAmount>10000.00</TaxAmount>
+          </TaxInformation>
+        </Line>
+      </Invoice>
+
+      <Invoice>
+        <InvoiceNo>DE-88812</InvoiceNo>
+        <!-- S002 = Dalsgaard El og VVS, present in MasterFiles -->
+        <SupplierID>S002</SupplierID>
+        <InvoiceDate>2024-02-05</InvoiceDate>
+        <TaxPointDate>2024-02-05</TaxPointDate>
+        <InvoiceType>Regular</InvoiceType>
+        <Description>El og VVS arbejde - Dalsgaard El og VVS ApS</Description>
+        <NetTotal>24000.00</NetTotal>
+        <GrossTotal>30000.00</GrossTotal>
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>40100</AccountID>
+          <Description>El installation</Description>
+          <Quantity>1</Quantity>
+          <UnitPrice>24000.00</UnitPrice>
+          <LineTotal>24000.00</LineTotal>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>SE25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>24000.00</TaxBase>
+            <TaxAmount>6000.00</TaxAmount>
+          </TaxInformation>
+        </Line>
+      </Invoice>
+
+      <!-- T1-B: Phantom supplier. SupplierID PH001 is not in MasterFiles.
+           CVR 40000001 does not exist in the Danish CVR registry. -->
+      <Invoice>
+        <InvoiceNo>PL-00291</InvoiceNo>
+        <SupplierID>PH001</SupplierID>
+        <InvoiceDate>2024-02-19</InvoiceDate>
+        <TaxPointDate>2024-02-19</TaxPointDate>
+        <InvoiceType>Regular</InvoiceType>
+        <Description>Underleverandor ydelser - Phantom Leverandor ApS CVR 40000001 [T1-B: phantom supplier not in MasterFiles]</Description>
+        <NetTotal>96000.00</NetTotal>
+        <GrossTotal>120000.00</GrossTotal>
+        <Line>
+          <LineNumber>1</LineNumber>
+          <AccountID>40200</AccountID>
+          <Description>Underleverandor ydelser</Description>
+          <Quantity>1</Quantity>
+          <UnitPrice>96000.00</UnitPrice>
+          <LineTotal>96000.00</LineTotal>
+          <TaxInformation>
+            <TaxType>VAT</TaxType>
+            <TaxCode>SE25</TaxCode>
+            <TaxPercentage>25.00</TaxPercentage>
+            <TaxBase>96000.00</TaxBase>
+            <TaxAmount>24000.00</TaxAmount>
+          </TaxInformation>
+        </Line>
+      </Invoice>
+
+    </PurchaseInvoices>
+
+  </SourceDocuments>
+
+</AuditFile>
